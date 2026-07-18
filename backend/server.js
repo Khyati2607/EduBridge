@@ -7,6 +7,8 @@ dotenv.config();
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
+const lessonRoutes = require("./routes/lessonRoutes");
+const quizRoutes = require("./routes/quizRoutes");
 connectDB();
 
 const app = express();
@@ -16,6 +18,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
+app.use("/api/lessons", lessonRoutes);
+app.use("/api/quiz", quizRoutes);
 app.get("/", (req, res) => {
     res.json({
         message: "AI Interview Assessment and Feedback System Backend is Running 🚀",
