@@ -8,23 +8,17 @@ const courseSchema = new mongoose.Schema(
       trim: true,
     },
 
-    class: {
-      type: String,
-      required: true,
-      enum: ["6", "7", "8", "9", "10"],
-    },
+    
 
     subject: {
       type: String,
       required: true,
     },
 
-    language: {
-      type: String,
-      enum: ["English", "Hindi"],
-      default: "English",
-    },
-
+   languages: {
+  type: [String],
+  default: ["English", "Hindi"],
+},
     description: {
       type: String,
       default: "",

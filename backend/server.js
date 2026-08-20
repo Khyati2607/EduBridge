@@ -20,8 +20,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/courses", courseRoutes);
 app.use("/api/lessons", lessonRoutes);
-app.use("/api/quiz", quizRoutes);
+app.use("/api/quizzes", quizRoutes);
 app.use("/api/progress", progressRoutes);
+
 app.get("/", (req, res) => {
     res.json({
         message: "AI Interview Assessment and Feedback System Backend is Running 🚀",

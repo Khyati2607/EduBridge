@@ -2,14 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getLessons,
+  getLessonsByCourse,
   createLesson,
 } = require("../controllers/lessonController");
 
-// Get all lessons
-router.get("/", getLessons);
+router.get("/:courseId", getLessonsByCourse);
 
-// Create lesson
 router.post("/", createLesson);
 
 module.exports = router;

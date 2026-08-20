@@ -8,36 +8,30 @@ const progressSchema = new mongoose.Schema(
       required: true,
     },
 
-    course: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-
     lesson: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lesson",
       required: true,
     },
 
+    score: {
+      type: Number,
+      required: true,
+    },
+
+    totalQuestions: {
+      type: Number,
+      required: true,
+    },
+
+    percentage: {
+      type: Number,
+      required: true,
+    },
+
     completed: {
       type: Boolean,
-      default: false,
-    },
-
-    progressPercentage: {
-      type: Number,
-      default: 0,
-    },
-
-    quizScore: {
-      type: Number,
-      default: 0,
-    },
-
-    lastAccessed: {
-      type: Date,
-      default: Date.now,
+      default: true,
     },
   },
   {

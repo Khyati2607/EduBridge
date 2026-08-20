@@ -2,51 +2,41 @@ const mongoose = require("mongoose");
 
 const lessonSchema = new mongoose.Schema(
   {
-    course: {
+    courseId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
       required: true,
     },
 
-    title: {
-      type: String,
-      required: true,
-      trim: true,
+    lessonName: {
+      english: {
+        type: String,
+        required: true,
+      },
+      hindi: {
+        type: String,
+        required: true,
+      },
     },
 
-    chapterNumber: {
+    notes: {
+      english: String,
+      hindi: String,
+    },
+
+    videoEnglish: {
+      type: String,
+      default: "",
+    },
+
+    videoHindi: {
+      type: String,
+      default: "",
+    },
+
+    order: {
       type: Number,
       required: true,
-    },
-
-    description: {
-      type: String,
-      default: "",
-    },
-
-    pdfUrl: {
-      type: String,
-      default: "",
-    },
-
-    videoUrl: {
-      type: String,
-      default: "",
-    },
-
-    audioUrl: {
-      type: String,
-      default: "",
-    },
-
-    duration: {
-      type: Number,
-      default: 0,
-    },
-
-    offlineAvailable: {
-      type: Boolean,
-      default: true,
     },
   },
   {

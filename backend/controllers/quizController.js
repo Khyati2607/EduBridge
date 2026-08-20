@@ -1,9 +1,11 @@
 const Quiz = require("../models/Quiz");
 
-// Get all quiz questions
-const getQuiz = async (req, res) => {
+// Get quiz by lesson
+const getQuizByLesson = async (req, res) => {
   try {
-    const quiz = await Quiz.find().populate("lesson");
+    const quiz = await Quiz.find({
+      lesson: req.params.lessonId,
+    });
 
     res.status(200).json({
       success: true,
@@ -11,6 +13,8 @@ const getQuiz = async (req, res) => {
       quiz,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -29,6 +33,8 @@ const createQuiz = async (req, res) => {
       quiz,
     });
   } catch (error) {
+    console.log(error);
+
     res.status(500).json({
       success: false,
       message: "Server Error",
@@ -37,6 +43,6 @@ const createQuiz = async (req, res) => {
 };
 
 module.exports = {
-  getQuiz,
+  getQuizByLesson,
   createQuiz,
 };

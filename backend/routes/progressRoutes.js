@@ -1,12 +1,17 @@
 const express = require("express");
+
 const router = express.Router();
 
 const {
-  getProgress,
   createProgress,
+  getProgress,
+  getStudentProgress,
 } = require("../controllers/progressController");
 
-router.get("/", getProgress);
 router.post("/", createProgress);
+
+router.get("/", getProgress);
+
+router.get("/:studentId", getStudentProgress);
 
 module.exports = router;

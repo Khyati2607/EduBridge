@@ -2,14 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getQuiz,
+  getQuizByLesson,
   createQuiz,
 } = require("../controllers/quizController");
 
-// Get all quiz questions
-router.get("/", getQuiz);
+router.get("/:lessonId", getQuizByLesson);
 
-// Create quiz question
 router.post("/", createQuiz);
 
 module.exports = router;

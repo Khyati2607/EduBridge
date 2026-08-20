@@ -5,13 +5,14 @@ import API from "../services/api";
 function Register() {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    role: "Student",
-  });
+const [formData, setFormData] = useState({
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "Student",
+  targetRole: "Frontend Developer",
+});
 
   const handleChange = (e) => {
     setFormData({
@@ -27,11 +28,12 @@ function Register() {
     }
 
     await API.post("/auth/register", {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      role: formData.role,
-    });
+  name: formData.name,
+  email: formData.email,
+  password: formData.password,
+  role: formData.role,
+  targetRole: formData.targetRole,
+});
 
     alert("Registration Successful!");
 
@@ -123,9 +125,29 @@ function Register() {
             className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500"
           >
             <option value="Student">Student</option>
-            <option value="Teacher">Teacher</option>
+            <option value="Professional">Professional</option>
           </select>
         </div>
+        <div className="mt-5">
+  <label className="font-semibold">
+    Target Role
+  </label>
+
+  <select
+    name="targetRole"
+    value={formData.targetRole}
+    onChange={handleChange}
+    className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-green-500"
+  >
+    <option>Frontend Developer</option>
+    <option>Backend Developer</option>
+    <option>Full Stack Developer</option>
+    <option>Data Scientist</option>
+    <option>AI/ML Engineer</option>
+    <option>HR</option>
+    <option>DevOps Engineer</option>
+  </select>
+</div>
 
         {/* Register Button */}
         <button

@@ -8,29 +8,37 @@ import Lessons from "./pages/Lessons";
 import Quiz from "./pages/Quiz";
 import Progress from "./pages/Progress";
 import Splash from "./pages/Splash";
-
+import LanguageSelection from "./pages/LanguageSelection";
 function App() {
   return (
     <BrowserRouter>
   <Routes>
 
-    <Route path="/" element={<Splash />} />
+  <Route path="/" element={<Splash />} />
 
-    <Route path="/login" element={<Login />} />
+  <Route path="/login" element={<Login />} />
 
-    <Route path="/register" element={<Register />} />
+  <Route path="/register" element={<Register />} />
 
-    <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/dashboard" element={<Dashboard />} />
 
-    <Route path="/courses" element={<Courses />} />
+  <Route path="/courses" element={<Courses />} />
 
-    <Route path="/lessons" element={<Lessons />} />
+  <Route
+    path="/language/:courseId"
+    element={<LanguageSelection />}
+  />
 
-    <Route path="/quiz" element={<Quiz />} />
+  <Route
+    path="/lessons/:courseId/:language"
+    element={<Lessons />}
+  />
 
-    <Route path="/progress" element={<Progress />} />
+  <Route path="/quiz/:lessonId" element={<Quiz />} />
 
-  </Routes>
+  <Route path="/progress" element={<Progress />} />
+
+</Routes>
 </BrowserRouter>
   );
 }
