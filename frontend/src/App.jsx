@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import MyCourses from "./pages/MyCourses";
@@ -14,7 +15,26 @@ import OfflineLessons from "./pages/OfflineLessons";
 import OfflineLesson from "./pages/OfflineLesson";
 import OfflineIndicator from "./components/OfflineIndicator";
 
+import { syncOfflineProgress } from "./services/syncService";
+
 function App() {
+  useEffect(() => {
+    // Try syncing when the app starts
+    syncOfflineProgress();
+
+    // Try syncing when internet comes back
+    const handleOnline = () => {
+      console.log("🌐 Internet restored. Starting sync...");
+      syncOfflineProgress();
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
 

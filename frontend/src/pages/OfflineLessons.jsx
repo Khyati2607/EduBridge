@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   getAllOfflineLessons,
   deleteOfflineLesson,
+  deleteOfflineQuiz,
 } from "../services/offlineStorage";
 
 function OfflineLessons() {
@@ -27,12 +28,23 @@ function OfflineLessons() {
   };
 
   const removeLesson = async (lessonId) => {
-    const success = await deleteOfflineLesson(lessonId);
+    const confirmDelete = window.confirm(
+      "Remove this lesson and its offline quiz?"
+    );
 
-    if (success) {
-      setLessons((prev) =>
-        prev.filter((lesson) => lesson._id !== lessonId)
-      );
+    if (!confirmDelete) return;
+
+    try {
+      const lessonDeleted = await deleteOfflineLesson(lessonId);
+      await deleteOfflineQuiz(lessonId);
+
+      if (lessonDeleted) {
+        setLessons((prev) =>
+          prev.filter((lesson) => lesson._id !== lessonId)
+        );
+      }
+    } catch (error) {
+      console.log("Remove Offline Lesson Error:", error);
     }
   };
 
@@ -48,7 +60,6 @@ function OfflineLessons() {
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
-
       <div className="max-w-5xl mx-auto">
 
         <h1 className="text-4xl font-bold text-green-700">
@@ -75,7 +86,6 @@ function OfflineLessons() {
           <div className="grid md:grid-cols-2 gap-6 mt-8">
 
             {lessons.map((lesson) => (
-
               <div
                 key={lesson._id}
                 className="bg-white rounded-2xl shadow-md p-6"
@@ -86,8 +96,7 @@ function OfflineLessons() {
                 </h2>
 
                 <p className="text-gray-600 mt-3">
-                  {lesson.notes?.english ||
-                    "No notes available."}
+                  {lesson.notes?.english || "No notes available."}
                 </p>
 
                 <div className="flex gap-3 mt-6">
@@ -102,9 +111,7 @@ function OfflineLessons() {
                   </button>
 
                   <button
-                    onClick={() =>
-                      removeLesson(lesson._id)
-                    }
+                    onClick={() => removeLesson(lesson._id)}
                     className="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl"
                   >
                     🗑 Remove
@@ -113,14 +120,12 @@ function OfflineLessons() {
                 </div>
 
               </div>
-
             ))}
 
           </div>
         )}
 
       </div>
-
     </div>
   );
 }
