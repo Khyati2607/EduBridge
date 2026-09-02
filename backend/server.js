@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const progressRoutes = require("./routes/progressRoutes");
-
+const enrollmentRoutes = require("./routes/enrollmentRoutes");
 dotenv.config();
 
 const connectDB = require("./config/db");
@@ -22,7 +22,7 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/lessons", lessonRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/progress", progressRoutes);
-
+app.use("/api/enrollments", enrollmentRoutes);
 app.get("/", (req, res) => {
     res.json({
         message: "AI Interview Assessment and Feedback System Backend is Running 🚀",

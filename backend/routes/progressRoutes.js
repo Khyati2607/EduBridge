@@ -1,17 +1,37 @@
 const express = require("express");
-
 const router = express.Router();
+
+const protect = require("../middleware/protect");
 
 const {
   createProgress,
   getProgress,
   getStudentProgress,
+  getCourseProgress,
+  getMyProgress,
 } = require("../controllers/progressController");
 
-router.post("/", createProgress);
+// My progress
+router.get("/my", protect, getMyProgress);
 
-router.get("/", getProgress);
+// My course-wise progress
+router.get(
+  "/my/course/:courseId",
+  protect,
+  getCourseProgress
+);
 
-router.get("/:studentId", getStudentProgress);
+// Student progress
+router.get(
+  "/:studentId",
+  protect,
+  getStudentProgress
+);
+
+// All progress
+router.get("/", protect, getProgress);
+
+// Create/update progress
+router.post("/", protect, createProgress);
 
 module.exports = router;

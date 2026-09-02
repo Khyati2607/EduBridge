@@ -4,96 +4,218 @@ import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
+  const [progress, setProgress] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProfile();
+    fetchDashboardData();
   }, []);
 
-  const fetchProfile = async () => {
+  const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await API.get("/auth/profile", {
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const config = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+      };
+
+      // =================================================
+      // GET LOGGED-IN USER PROFILE
+      // =================================================
+      const profileRes = await API.get(
+        "/auth/profile",
+        config
+      );
+
+      setUser(profileRes.data.user);
+
+      // =================================================
+      // GET MY ENROLLED COURSES
+      // =================================================
+      const enrollmentRes = await API.get(
+        "/enrollments/my",
+        config
+      );
+
+      setEnrollments(
+        enrollmentRes.data.enrollments || []
+      );
+
+      // =================================================
+      // GET MY PROGRESS
+      // =================================================
+      const progressRes = await API.get(
+        "/progress/my",
+        config
+      );
+
+      const data = progressRes.data.progress || [];
+
+      // Keep only latest attempt for each lesson
+      const latestProgress = {};
+
+      data.forEach((item) => {
+        const lessonId = item.lesson?._id;
+
+        if (!lessonId) return;
+
+        if (
+          !latestProgress[lessonId] ||
+          new Date(item.createdAt) >
+            new Date(
+              latestProgress[lessonId].createdAt
+            )
+        ) {
+          latestProgress[lessonId] = item;
+        }
       });
 
-      setUser(res.data.user);
+      setProgress(
+        Object.values(latestProgress)
+      );
+
     } catch (error) {
-      console.log(error);
+      console.log("Dashboard Error:", error);
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      }
+    } finally {
+      setLoading(false);
     }
   };
+
+  // =====================================================
+  // DASHBOARD STATISTICS
+  // =====================================================
+
+  const coursesEnrolled = enrollments.length;
+
+  const lessonsCompleted = progress.filter(
+    (item) => item.completed
+  ).length;
+
+  const averageScore =
+    progress.length > 0
+      ? Math.round(
+          progress.reduce(
+            (sum, item) =>
+              sum + (item.percentage || 0),
+            0
+          ) / progress.length
+        )
+      : 0;
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
 
-      {/* Welcome Section */}
-      <h1 className="text-4xl font-bold text-green-700">
-        Welcome, {user ? user.name : "Loading..."} 👋
-      </h1>
+      <div className="max-w-6xl mx-auto">
 
-      <p className="text-gray-600 mt-2">
-        {user ? user.email : ""}
-      </p>
+        {/* Welcome Section */}
+        <h1 className="text-4xl font-bold text-green-700">
+          Welcome,{" "}
+          {user ? user.name : "Loading..."} 👋
+        </h1>
 
-      {/* Dashboard Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+        <p className="text-gray-600 mt-2">
+          {user ? user.email : ""}
+        </p>
 
-        {/* Courses */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-gray-500">
-            Courses Enrolled
-          </h2>
+        {/* Dashboard Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
 
-          <p className="text-4xl font-bold text-green-600 mt-3">
-            5
-          </p>
+          {/* Courses */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-gray-500">
+              Courses Enrolled
+            </h2>
+
+            <p className="text-4xl font-bold text-green-600 mt-3">
+              {loading ? "..." : coursesEnrolled}
+            </p>
+          </div>
+
+          {/* Lessons */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-gray-500">
+              Lessons Completed
+            </h2>
+
+            <p className="text-4xl font-bold text-blue-600 mt-3">
+              {loading ? "..." : lessonsCompleted}
+            </p>
+          </div>
+
+          {/* Quiz */}
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <h2 className="text-gray-500">
+              Average Quiz Score
+            </h2>
+
+            <p className="text-4xl font-bold text-purple-600 mt-3">
+              {loading
+                ? "..."
+                : `${averageScore}%`}
+            </p>
+          </div>
+
         </div>
 
-        {/* Lessons */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-gray-500">
-            Lessons Completed
-          </h2>
+        {/* Navigation Buttons */}
+        <div className="flex flex-wrap justify-center gap-4 mt-10">
 
-          <p className="text-4xl font-bold text-blue-600 mt-3">
-            18
-          </p>
+          <button
+            onClick={() =>
+              navigate("/offline-lessons")
+            }
+            className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
+          >
+            📥 Offline Lessons
+          </button>
+
+          <button
+            onClick={() =>
+              navigate("/courses")
+            }
+            className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
+          >
+            📚 Browse Courses
+          </button>
+
+          <button
+            onClick={() =>
+              navigate("/progress")
+            }
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
+          >
+            📊 My Progress
+          </button>
+
+          <button
+            onClick={() =>
+              navigate("/my-courses")
+            }
+            className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
+          >
+            🎓 My Courses
+          </button>
+
         </div>
-
-        {/* Quiz */}
-        <div className="bg-white rounded-2xl shadow-md p-6">
-          <h2 className="text-gray-500">
-            Quiz Score
-          </h2>
-
-          <p className="text-4xl font-bold text-purple-600 mt-3">
-            92%
-          </p>
-        </div>
-
-      </div>
-
-      {/* Navigation Buttons */}
-      <div className="flex flex-wrap justify-center gap-4 mt-10">
-
-        {/* Courses Button */}
-        <button
-          onClick={() => navigate("/courses")}
-          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
-        >
-          📚 Browse Courses
-        </button>
-
-        {/* Progress Button */}
-        <button
-          onClick={() => navigate("/progress")}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
-        >
-          📊 My Progress
-        </button>
 
       </div>
 
