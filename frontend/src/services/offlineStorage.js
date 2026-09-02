@@ -43,7 +43,10 @@ export const saveLessonOffline = async (lesson) => {
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(LESSON_STORE, "readwrite");
+      const transaction = db.transaction(
+        LESSON_STORE,
+        "readwrite"
+      );
 
       transaction.objectStore(LESSON_STORE).put(lesson);
 
@@ -105,7 +108,10 @@ export const deleteOfflineLesson = async (lessonId) => {
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(LESSON_STORE, "readwrite");
+      const transaction = db.transaction(
+        LESSON_STORE,
+        "readwrite"
+      );
 
       transaction.objectStore(LESSON_STORE).delete(lessonId);
 
@@ -125,7 +131,10 @@ export const saveQuizOffline = async (lessonId, quiz) => {
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(QUIZ_STORE, "readwrite");
+      const transaction = db.transaction(
+        QUIZ_STORE,
+        "readwrite"
+      );
 
       transaction.objectStore(QUIZ_STORE).put({
         lessonId,
@@ -160,6 +169,29 @@ export const getOfflineQuiz = async (lessonId) => {
   } catch (error) {
     console.log("Offline Quiz Fetch Error:", error);
     return null;
+  }
+};
+
+/* ================= DELETE OFFLINE QUIZ ================= */
+
+export const deleteOfflineQuiz = async (lessonId) => {
+  try {
+    const db = await openDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        QUIZ_STORE,
+        "readwrite"
+      );
+
+      transaction.objectStore(QUIZ_STORE).delete(lessonId);
+
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(transaction.error);
+    });
+  } catch (error) {
+    console.log("Delete Offline Quiz Error:", error);
+    return false;
   }
 };
 
@@ -244,6 +276,35 @@ export const deleteOfflineProgress = async (id) => {
     });
   } catch (error) {
     console.log("Delete Offline Progress Error:", error);
+    return false;
+  }
+};
+
+/* ================= CLEAR ALL OFFLINE DATA ================= */
+
+export const clearAllOfflineData = async () => {
+  try {
+    const db = await openDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(
+        [
+          LESSON_STORE,
+          QUIZ_STORE,
+          PROGRESS_STORE,
+        ],
+        "readwrite"
+      );
+
+      transaction.objectStore(LESSON_STORE).clear();
+      transaction.objectStore(QUIZ_STORE).clear();
+      transaction.objectStore(PROGRESS_STORE).clear();
+
+      transaction.oncomplete = () => resolve(true);
+      transaction.onerror = () => reject(transaction.error);
+    });
+  } catch (error) {
+    console.log("Clear Offline Data Error:", error);
     return false;
   }
 };

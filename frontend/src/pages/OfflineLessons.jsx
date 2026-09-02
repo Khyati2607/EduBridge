@@ -4,6 +4,7 @@ import {
   getAllOfflineLessons,
   deleteOfflineLesson,
   deleteOfflineQuiz,
+  clearAllOfflineData,
 } from "../services/offlineStorage";
 
 function OfflineLessons() {
@@ -48,6 +49,24 @@ function OfflineLessons() {
     }
   };
 
+  const clearAll = async () => {
+    const confirmDelete = window.confirm(
+      "Delete ALL offline lessons, quizzes and offline progress?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const success = await clearAllOfflineData();
+
+      if (success) {
+        setLessons([]);
+      }
+    } catch (error) {
+      console.log("Clear Offline Data Error:", error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-green-50 flex items-center justify-center">
@@ -62,13 +81,28 @@ function OfflineLessons() {
     <div className="min-h-screen bg-green-50 p-8">
       <div className="max-w-5xl mx-auto">
 
-        <h1 className="text-4xl font-bold text-green-700">
-          📥 Offline Lessons
-        </h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 
-        <p className="text-gray-600 mt-2">
-          Access your saved lessons without an internet connection.
-        </p>
+          <div>
+            <h1 className="text-4xl font-bold text-green-700">
+              📥 Offline Lessons
+            </h1>
+
+            <p className="text-gray-600 mt-2">
+              Access your saved lessons without an internet connection.
+            </p>
+          </div>
+
+          {lessons.length > 0 && (
+            <button
+              onClick={clearAll}
+              className="bg-red-600 hover:bg-red-700 text-white px-5 py-3 rounded-xl font-semibold"
+            >
+              🗑 Clear All Offline Data
+            </button>
+          )}
+
+        </div>
 
         {lessons.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-md p-10 mt-8 text-center">
