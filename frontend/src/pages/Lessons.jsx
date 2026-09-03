@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import API from "../services/api";
-import { saveLessonOffline } from "../services/offlineStorage";
+
+import {
+  saveLessonOffline,
+  saveQuizOffline,
+} from "../services/offlineStorage";
 
 function Lessons() {
   const { courseId, language } = useParams();
@@ -72,11 +76,45 @@ function Lessons() {
     }
   };
 
-  // Save lesson for offline use
+  // Save lesson + quiz for offline use
   const downloadLesson = async (lesson) => {
-    const success = await saveLessonOffline(lesson);
+    try {
+      // Save lesson
+      const lessonSuccess = await saveLessonOffline(lesson);
 
-    if (success) {
+      if (!lessonSuccess) {
+        alert("Unable to save lesson offline.");
+        return;
+      }
+
+      // Save quiz
+      try {
+        const quizRes = await API.get(
+          `/quizzes/${lesson._id}`
+        );
+
+        const quiz = quizRes.data.quiz || [];
+
+        if (quiz.length > 0) {
+          const quizSuccess = await saveQuizOffline(
+            lesson._id,
+            quiz
+          );
+
+          if (!quizSuccess) {
+            console.log(
+              "Quiz could not be saved offline."
+            );
+          }
+        }
+      } catch (quizError) {
+        console.log(
+          "Offline Quiz Download Error:",
+          quizError
+        );
+      }
+
+      // Update button
       setOfflineLessons((prev) => {
         if (prev.includes(lesson._id)) {
           return prev;
@@ -85,9 +123,18 @@ function Lessons() {
         return [...prev, lesson._id];
       });
 
-      alert("Lesson saved for offline use! 📥");
-    } else {
-      alert("Unable to save lesson offline.");
+      alert(
+        "Lesson and quiz saved for offline use! 📥"
+      );
+    } catch (error) {
+      console.log(
+        "Download Lesson Error:",
+        error
+      );
+
+      alert(
+        "Unable to save lesson offline."
+      );
     }
   };
 
@@ -190,12 +237,17 @@ function Lessons() {
               ? lesson.videoHindi
               : lesson.videoEnglish;
 
-          const previousLesson = lessons[index - 1];
-          const nextLesson = lessons[index + 1];
+          const previousLesson =
+            lessons[index - 1];
 
-          const progress = lessonProgress[lesson._id];
+          const nextLesson =
+            lessons[index + 1];
 
-          const completed = progress?.completed || false;
+          const progress =
+            lessonProgress[lesson._id];
+
+          const completed =
+            progress?.completed || false;
 
           return (
             <div
@@ -221,6 +273,7 @@ function Lessons() {
 
                 {/* Completion Status */}
                 <div>
+
                   {completed ? (
                     <span className="inline-block bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold">
                       ✅ Completed
@@ -230,6 +283,7 @@ function Lessons() {
                       ⭕ Not Completed
                     </span>
                   )}
+
                 </div>
 
               </div>
@@ -240,7 +294,8 @@ function Lessons() {
 
                   <p className="text-purple-700 font-semibold">
                     📝 Latest Quiz Score:{" "}
-                    {progress.score}/{progress.totalQuestions}
+                    {progress.score}/
+                    {progress.totalQuestions}
                   </p>
 
                   <p className="text-purple-600">
@@ -258,7 +313,8 @@ function Lessons() {
                 </h3>
 
                 <p className="mt-3 text-gray-700 leading-relaxed whitespace-pre-line">
-                  {lessonNotes || "No notes available."}
+                  {lessonNotes ||
+                    "No notes available."}
                 </p>
 
               </div>
@@ -298,15 +354,23 @@ function Lessons() {
 
                 {/* Save Offline */}
                 <button
-                  onClick={() => downloadLesson(lesson)}
-                  disabled={offlineLessons.includes(lesson._id)}
+                  onClick={() =>
+                    downloadLesson(lesson)
+                  }
+                  disabled={offlineLessons.includes(
+                    lesson._id
+                  )}
                   className={`px-6 py-3 rounded-xl text-white ${
-                    offlineLessons.includes(lesson._id)
+                    offlineLessons.includes(
+                      lesson._id
+                    )
                       ? "bg-gray-500 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600"
                   }`}
                 >
-                  {offlineLessons.includes(lesson._id)
+                  {offlineLessons.includes(
+                    lesson._id
+                  )
                     ? "✅ Saved Offline"
                     : "📥 Save Offline"}
                 </button>
@@ -314,7 +378,9 @@ function Lessons() {
                 {/* Quiz */}
                 <button
                   onClick={() =>
-                    navigate(`/quiz/${lesson._id}`)
+                    navigate(
+                      `/quiz/${lesson._id}`
+                    )
                   }
                   className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl font-semibold"
                 >

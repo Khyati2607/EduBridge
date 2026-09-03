@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import AIAssistant from "./pages/AIAssistant";
+import SwitchAccount from "./pages/SwitchAccount";
 import MyCourses from "./pages/MyCourses";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -93,7 +94,10 @@ function AppContent() {
           path="/language/:courseId"
           element={<LanguageSelection />}
         />
-
+        <Route
+  path="/switch-account"
+  element={<SwitchAccount />}
+/>
         <Route
           path="/lessons/:courseId/:language"
           element={<Lessons />}

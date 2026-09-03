@@ -11,6 +11,8 @@ function Login() {
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -19,18 +21,112 @@ function Login() {
   };
 
   const handleLogin = async () => {
+    if (!formData.email || !formData.password) {
+      alert("Please enter email and password.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const res = await API.post("/auth/login", formData);
 
-      localStorage.setItem("token", res.data.token);
-localStorage.setItem("userId", res.data.user._id);
-localStorage.setItem("userName", res.data.user.name);
+      const user = res.data.user;
+      const token = res.data.token;
+
+      /* ================= CURRENT SESSION ================= */
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", user._id);
+      localStorage.setItem("userName", user.name);
+      localStorage.setItem("userEmail", user.email);
+
+      /* ================= OFFLINE SESSION ================= */
+
+      localStorage.setItem("offlineUser", "true");
+      localStorage.setItem("offlineEmail", user.email);
+
+      /* ================= REMEMBER ACCOUNT ================= */
+
+      const savedAccounts = JSON.parse(
+        localStorage.getItem("eduBridgeAccounts") || "[]"
+      );
+
+      const account = {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      };
+
+      const updatedAccounts = [
+        account,
+        ...savedAccounts.filter(
+          (item) => item.id !== user._id
+        ),
+      ];
+
+      localStorage.setItem(
+        "eduBridgeAccounts",
+        JSON.stringify(updatedAccounts)
+      );
+
+      /* ================= ACCOUNT-SPECIFIC PROGRESS ================= */
+
+      const oldProgress =
+        localStorage.getItem("dashboardProgress");
+
+      if (oldProgress) {
+        localStorage.setItem(
+          `dashboardProgress_${user._id}`,
+          oldProgress
+        );
+
+        localStorage.removeItem(
+          "dashboardProgress"
+        );
+      }
 
       alert("Login Successful!");
 
       navigate("/dashboard");
     } catch (err) {
-      alert(err.response?.data?.message || "Login Failed");
+      const isOffline =
+        !navigator.onLine || !err.response;
+
+      if (isOffline) {
+        const offlineUser =
+          localStorage.getItem("offlineUser");
+
+        const userId =
+          localStorage.getItem("userId");
+
+        const userName =
+          localStorage.getItem("userName");
+
+        if (offlineUser === "true" && userId) {
+          alert(
+            `Offline Mode: Welcome back ${
+              userName || "Student"
+            }!`
+          );
+
+          navigate("/offline-lessons");
+          return;
+        }
+
+        alert(
+          "You must login once while online before using EduBridge offline."
+        );
+
+        return;
+      }
+
+      alert(
+        err.response?.data?.message ||
+          "Login Failed"
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,9 +142,10 @@ localStorage.setItem("userName", res.data.user.name);
           Login to continue learning
         </p>
 
-        {/* Email */}
         <div className="mt-8">
-          <label className="font-semibold">Email</label>
+          <label className="font-semibold">
+            Email
+          </label>
 
           <div className="flex items-center border rounded-xl mt-2 px-3">
             <FaEnvelope className="text-gray-500" />
@@ -64,9 +161,10 @@ localStorage.setItem("userName", res.data.user.name);
           </div>
         </div>
 
-        {/* Password */}
         <div className="mt-5">
-          <label className="font-semibold">Password</label>
+          <label className="font-semibold">
+            Password
+          </label>
 
           <div className="flex items-center border rounded-xl mt-2 px-3">
             <FaLock className="text-gray-500" />
@@ -82,12 +180,12 @@ localStorage.setItem("userName", res.data.user.name);
           </div>
         </div>
 
-        {/* Login Button */}
         <button
           onClick={handleLogin}
-          className="w-full mt-8 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition"
+          disabled={loading}
+          className="w-full mt-8 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition disabled:opacity-50"
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
         <p className="text-center mt-6 text-gray-600">

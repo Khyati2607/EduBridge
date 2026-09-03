@@ -1,9 +1,11 @@
 const DB_NAME = "EduBridgeDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const LESSON_STORE = "lessons";
 const QUIZ_STORE = "quizzes";
 const PROGRESS_STORE = "offlineProgress";
+
+const getUserId = () => localStorage.getItem("userId");
 
 const openDB = () => {
   return new Promise((resolve, reject) => {
@@ -14,13 +16,13 @@ const openDB = () => {
 
       if (!db.objectStoreNames.contains(LESSON_STORE)) {
         db.createObjectStore(LESSON_STORE, {
-          keyPath: "_id",
+          keyPath: "id",
         });
       }
 
       if (!db.objectStoreNames.contains(QUIZ_STORE)) {
         db.createObjectStore(QUIZ_STORE, {
-          keyPath: "lessonId",
+          keyPath: "id",
         });
       }
 
@@ -40,15 +42,20 @@ const openDB = () => {
 
 export const saveLessonOffline = async (lesson) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        LESSON_STORE,
-        "readwrite"
-      );
+      const transaction = db.transaction(LESSON_STORE, "readwrite");
 
-      transaction.objectStore(LESSON_STORE).put(lesson);
+      transaction.objectStore(LESSON_STORE).put({
+        ...lesson,
+        id: `${userId}_${lesson._id}`,
+        userId,
+      });
 
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(transaction.error);
@@ -61,13 +68,17 @@ export const saveLessonOffline = async (lesson) => {
 
 export const getOfflineLesson = async (lessonId) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return null;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
       const request = db
         .transaction(LESSON_STORE, "readonly")
         .objectStore(LESSON_STORE)
-        .get(lessonId);
+        .get(`${userId}_${lessonId}`);
 
       request.onsuccess = () => {
         resolve(request.result || null);
@@ -83,6 +94,10 @@ export const getOfflineLesson = async (lessonId) => {
 
 export const getAllOfflineLessons = async () => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return [];
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
@@ -92,7 +107,11 @@ export const getAllOfflineLessons = async () => {
         .getAll();
 
       request.onsuccess = () => {
-        resolve(request.result || []);
+        const lessons = (request.result || []).filter(
+          (lesson) => lesson.userId === userId
+        );
+
+        resolve(lessons);
       };
 
       request.onerror = () => reject(request.error);
@@ -105,15 +124,18 @@ export const getAllOfflineLessons = async () => {
 
 export const deleteOfflineLesson = async (lessonId) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        LESSON_STORE,
-        "readwrite"
-      );
+      const transaction = db.transaction(LESSON_STORE, "readwrite");
 
-      transaction.objectStore(LESSON_STORE).delete(lessonId);
+      transaction
+        .objectStore(LESSON_STORE)
+        .delete(`${userId}_${lessonId}`);
 
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(transaction.error);
@@ -128,15 +150,18 @@ export const deleteOfflineLesson = async (lessonId) => {
 
 export const saveQuizOffline = async (lessonId, quiz) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        QUIZ_STORE,
-        "readwrite"
-      );
+      const transaction = db.transaction(QUIZ_STORE, "readwrite");
 
       transaction.objectStore(QUIZ_STORE).put({
+        id: `${userId}_${lessonId}`,
+        userId,
         lessonId,
         quiz,
       });
@@ -152,13 +177,17 @@ export const saveQuizOffline = async (lessonId, quiz) => {
 
 export const getOfflineQuiz = async (lessonId) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return null;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
       const request = db
         .transaction(QUIZ_STORE, "readonly")
         .objectStore(QUIZ_STORE)
-        .get(lessonId);
+        .get(`${userId}_${lessonId}`);
 
       request.onsuccess = () => {
         resolve(request.result?.quiz || null);
@@ -172,19 +201,20 @@ export const getOfflineQuiz = async (lessonId) => {
   }
 };
 
-/* ================= DELETE OFFLINE QUIZ ================= */
-
 export const deleteOfflineQuiz = async (lessonId) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        QUIZ_STORE,
-        "readwrite"
-      );
+      const transaction = db.transaction(QUIZ_STORE, "readwrite");
 
-      transaction.objectStore(QUIZ_STORE).delete(lessonId);
+      transaction
+        .objectStore(QUIZ_STORE)
+        .delete(`${userId}_${lessonId}`);
 
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(transaction.error);
@@ -199,6 +229,10 @@ export const deleteOfflineQuiz = async (lessonId) => {
 
 export const saveOfflineProgress = async (progress) => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
@@ -209,7 +243,8 @@ export const saveOfflineProgress = async (progress) => {
 
       transaction.objectStore(PROGRESS_STORE).put({
         ...progress,
-        id: `${progress.lesson}-${Date.now()}`,
+        id: `${userId}_${progress.lesson}_${Date.now()}`,
+        userId,
         synced: false,
       });
 
@@ -224,6 +259,10 @@ export const saveOfflineProgress = async (progress) => {
 
 export const getOfflineProgress = async () => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return [];
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
@@ -233,7 +272,11 @@ export const getOfflineProgress = async () => {
         .getAll();
 
       request.onsuccess = () => {
-        resolve(request.result || []);
+        const progress = (request.result || []).filter(
+          (item) => item.userId === userId
+        );
+
+        resolve(progress);
       };
 
       request.onerror = () => reject(request.error);
@@ -244,19 +287,12 @@ export const getOfflineProgress = async () => {
   }
 };
 
-/* ================= SYNC HELPERS ================= */
-
 export const getUnsyncedProgress = async () => {
-  try {
-    const progress = await getOfflineProgress();
+  const progress = await getOfflineProgress();
 
-    return progress.filter(
-      (item) => item.synced === false
-    );
-  } catch (error) {
-    console.log("Unsynced Progress Error:", error);
-    return [];
-  }
+  return progress.filter(
+    (item) => item.synced === false
+  );
 };
 
 export const deleteOfflineProgress = async (id) => {
@@ -280,10 +316,14 @@ export const deleteOfflineProgress = async (id) => {
   }
 };
 
-/* ================= CLEAR ALL OFFLINE DATA ================= */
+/* ================= CLEAR CURRENT USER DATA ================= */
 
 export const clearAllOfflineData = async () => {
   try {
+    const userId = getUserId();
+
+    if (!userId) return false;
+
     const db = await openDB();
 
     return new Promise((resolve, reject) => {
@@ -296,9 +336,32 @@ export const clearAllOfflineData = async () => {
         "readwrite"
       );
 
-      transaction.objectStore(LESSON_STORE).clear();
-      transaction.objectStore(QUIZ_STORE).clear();
-      transaction.objectStore(PROGRESS_STORE).clear();
+      const lessons = transaction
+        .objectStore(LESSON_STORE);
+
+      const quizzes = transaction
+        .objectStore(QUIZ_STORE);
+
+      const progress = transaction
+        .objectStore(PROGRESS_STORE);
+
+      lessons.getAll().onsuccess = (event) => {
+        event.target.result
+          .filter((item) => item.userId === userId)
+          .forEach((item) => lessons.delete(item.id));
+      };
+
+      quizzes.getAll().onsuccess = (event) => {
+        event.target.result
+          .filter((item) => item.userId === userId)
+          .forEach((item) => quizzes.delete(item.id));
+      };
+
+      progress.getAll().onsuccess = (event) => {
+        event.target.result
+          .filter((item) => item.userId === userId)
+          .forEach((item) => progress.delete(item.id));
+      };
 
       transaction.oncomplete = () => resolve(true);
       transaction.onerror = () => reject(transaction.error);
