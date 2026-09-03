@@ -4,7 +4,10 @@ const router = express.Router();
 const {
   getQuizByLesson,
   createQuiz,
+  generateQuiz,
 } = require("../controllers/quizController");
+
+router.post("/generate", generateQuiz);
 
 router.get("/:lessonId", getQuizByLesson);
 

@@ -19,6 +19,9 @@ function Quiz() {
   const [offline, setOffline] = useState(false);
   const [message, setMessage] = useState("");
 
+  const [topic, setTopic] = useState("");
+  const [generating, setGenerating] = useState(false);
+
   useEffect(() => {
     fetchQuiz();
   }, [lessonId]);
@@ -26,10 +29,7 @@ function Quiz() {
   const fetchQuiz = async () => {
     setLoading(true);
 
-    // OFFLINE
     if (!navigator.onLine) {
-      console.log("Internet unavailable. Loading offline quiz...");
-
       const offlineQuiz = await getOfflineQuiz(lessonId);
 
       if (offlineQuiz && offlineQuiz.length > 0) {
@@ -45,24 +45,19 @@ function Quiz() {
       return;
     }
 
-    // ONLINE
     try {
       const res = await API.get(`/quizzes/${lessonId}`);
-
       const quiz = res.data.quiz || [];
 
       setQuestions(quiz);
 
-      // Save quiz locally for future offline use
       if (quiz.length > 0) {
         await saveQuizOffline(lessonId, quiz);
       }
 
       setOffline(false);
     } catch (error) {
-      console.log(
-        "Online quiz failed. Trying offline..."
-      );
+      console.log("Online quiz failed. Trying offline...");
 
       const offlineQuiz = await getOfflineQuiz(lessonId);
 
@@ -76,6 +71,47 @@ function Quiz() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateAIQuiz = async () => {
+    if (!topic.trim()) {
+      setMessage("Please enter a topic first.");
+      return;
+    }
+
+    if (!navigator.onLine) {
+      setMessage("AI Quiz Generation requires an internet connection.");
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      setMessage("");
+
+      await API.post("/quizzes/generate", {
+        lessonId,
+        topic: topic.trim(),
+        numberOfQuestions: 5,
+      });
+
+      setTopic("");
+      setAnswers({});
+      setSubmitted(false);
+      setScore(0);
+
+      setMessage("✨ AI Quiz generated successfully!");
+
+      await fetchQuiz();
+    } catch (error) {
+      console.error("AI Quiz Generation Error:", error);
+
+      setMessage(
+        error.response?.data?.message ||
+          "Unable to generate AI quiz. Please try again."
+      );
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -93,19 +129,7 @@ function Quiz() {
 
     let marks = 0;
 
-    console.log("QUESTIONS:", questions);
-    console.log("ANSWERS:", answers);
-
     questions.forEach((q) => {
-      console.log(
-        "Question:",
-        q.question,
-        "Selected:",
-        answers[q._id],
-        "Correct:",
-        q.correctAnswer
-      );
-
       if (
         String(answers[q._id]).trim() ===
         String(q.correctAnswer).trim()
@@ -117,8 +141,7 @@ function Quiz() {
     const percentage = Math.round(
       (marks / questions.length) * 100
     );
-    console.log("FINAL MARKS:", marks);
-console.log("FINAL PERCENTAGE:", percentage);
+
     setScore(marks);
     setSubmitted(true);
 
@@ -129,7 +152,6 @@ console.log("FINAL PERCENTAGE:", percentage);
       percentage,
     };
 
-    // ACTUALLY OFFLINE
     if (!navigator.onLine) {
       const saved = await saveOfflineProgress(progressData);
 
@@ -142,7 +164,6 @@ console.log("FINAL PERCENTAGE:", percentage);
       return;
     }
 
-    // ONLINE
     try {
       const token = localStorage.getItem("token");
 
@@ -151,29 +172,17 @@ console.log("FINAL PERCENTAGE:", percentage);
         return;
       }
 
-      await API.post(
-        "/progress",
-        progressData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.post("/progress", progressData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-      setMessage(
-        "✅ Progress saved successfully!"
-      );
+      setMessage("✅ Progress saved successfully!");
     } catch (error) {
-      console.log(
-        "Online progress failed:",
-        error
-      );
+      console.log("Online progress failed:", error);
 
-      // Save locally if server unavailable
-      const saved = await saveOfflineProgress(
-        progressData
-      );
+      const saved = await saveOfflineProgress(progressData);
 
       if (saved) {
         setMessage(
@@ -204,7 +213,6 @@ console.log("FINAL PERCENTAGE:", percentage);
     return (
       <div className="min-h-screen bg-green-50 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-
           <h1 className="text-2xl font-bold text-red-500">
             Quiz Unavailable
           </h1>
@@ -219,7 +227,6 @@ console.log("FINAL PERCENTAGE:", percentage);
           >
             ← Go Back
           </button>
-
         </div>
       </div>
     );
@@ -230,7 +237,6 @@ console.log("FINAL PERCENTAGE:", percentage);
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-8">
 
         <div className="flex justify-between items-center mb-8">
-
           <h1 className="text-3xl font-bold text-green-700">
             📝 Quiz
           </h1>
@@ -240,14 +246,48 @@ console.log("FINAL PERCENTAGE:", percentage);
               📥 Offline Mode
             </span>
           )}
-
         </div>
 
+        {/* AI QUIZ GENERATOR */}
+        {!offline && (
+          <div className="mb-8 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl">
+            <h2 className="text-xl font-bold text-blue-700">
+              ✨ Generate AI Quiz
+            </h2>
+
+            <p className="text-gray-600 mt-1 mb-4">
+              Enter a topic and let EduBridge create 5 questions for you.
+            </p>
+
+            <input
+              type="text"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="Example: Addition, Photosynthesis, Python..."
+              className="w-full border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={generating}
+            />
+
+            <button
+              onClick={generateAIQuiz}
+              disabled={generating || !topic.trim()}
+              className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50"
+            >
+              {generating
+                ? "🤖 Generating..."
+                : "✨ Generate AI Quiz"}
+            </button>
+          </div>
+        )}
+
+        {message && (
+          <div className="mb-6 bg-blue-50 text-blue-700 p-4 rounded-xl">
+            {message}
+          </div>
+        )}
+
         {questions.map((q, index) => (
-          <div
-            key={q._id}
-            className="mb-8"
-          >
+          <div key={q._id} className="mb-8">
 
             <h2 className="font-semibold text-lg mb-4">
               {index + 1}. {q.question}
@@ -267,29 +307,21 @@ console.log("FINAL PERCENTAGE:", percentage);
                     : "hover:bg-green-100"
                 }`}
               >
-
                 <input
                   type="radio"
                   name={q._id}
                   value={option}
-                  checked={
-                    answers[q._id] === option
-                  }
+                  checked={answers[q._id] === option}
                   disabled={submitted}
                   onChange={() =>
-                    handleOption(
-                      q._id,
-                      option
-                    )
+                    handleOption(q._id, option)
                   }
                   className="mr-2"
                 />
 
                 {option}
-
               </label>
             ))}
-
           </div>
         ))}
 
@@ -327,12 +359,6 @@ console.log("FINAL PERCENTAGE:", percentage);
                 : "❌ Try Again"}
             </h3>
 
-            {message && (
-              <p className="text-blue-600 mt-4">
-                {message}
-              </p>
-            )}
-
             <button
               onClick={resetQuiz}
               className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
@@ -342,7 +368,6 @@ console.log("FINAL PERCENTAGE:", percentage);
 
           </div>
         )}
-
       </div>
     </div>
   );
