@@ -29,9 +29,6 @@ function Dashboard() {
         },
       };
 
-      // =================================================
-      // GET LOGGED-IN USER PROFILE
-      // =================================================
       const profileRes = await API.get(
         "/auth/profile",
         config
@@ -39,9 +36,6 @@ function Dashboard() {
 
       setUser(profileRes.data.user);
 
-      // =================================================
-      // GET MY ENROLLED COURSES
-      // =================================================
       const enrollmentRes = await API.get(
         "/enrollments/my",
         config
@@ -51,9 +45,6 @@ function Dashboard() {
         enrollmentRes.data.enrollments || []
       );
 
-      // =================================================
-      // GET MY PROGRESS
-      // =================================================
       const progressRes = await API.get(
         "/progress/my",
         config
@@ -61,7 +52,6 @@ function Dashboard() {
 
       const data = progressRes.data.progress || [];
 
-      // Keep only latest attempt for each lesson
       const latestProgress = {};
 
       data.forEach((item) => {
@@ -96,10 +86,6 @@ function Dashboard() {
     }
   };
 
-  // =====================================================
-  // DASHBOARD STATISTICS
-  // =====================================================
-
   const coursesEnrolled = enrollments.length;
 
   const lessonsCompleted = progress.filter(
@@ -116,10 +102,6 @@ function Dashboard() {
           ) / progress.length
         )
       : 0;
-
-  // =====================================================
-  // UI
-  // =====================================================
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
@@ -172,6 +154,35 @@ function Dashboard() {
                 ? "..."
                 : `${averageScore}%`}
             </p>
+          </div>
+
+        </div>
+
+        {/* AI Assistant */}
+        <div className="mt-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-7 text-white">
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+
+            <div>
+              <h2 className="text-2xl font-bold">
+                🤖 EduBridge AI Learning Assistant
+              </h2>
+
+              <p className="mt-2 text-blue-100">
+                Ask questions, understand concepts,
+                and learn with your AI assistant.
+              </p>
+            </div>
+
+            <button
+              onClick={() =>
+                navigate("/ai-assistant")
+              }
+              className="bg-white text-blue-700 px-7 py-3 rounded-xl font-bold shadow-md hover:bg-blue-50 transition"
+            >
+              Ask AI →
+            </button>
+
           </div>
 
         </div>

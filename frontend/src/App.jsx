@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import AIAssistant from "./pages/AIAssistant";
 import MyCourses from "./pages/MyCourses";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -94,7 +94,7 @@ function App() {
           path="/quiz/:lessonId"
           element={<Quiz />}
         />
-
+        <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route
           path="/progress"
           element={<Progress />}
