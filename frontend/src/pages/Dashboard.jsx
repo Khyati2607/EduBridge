@@ -26,8 +26,6 @@ function Dashboard() {
     loadRecommendations();
   }, []);
 
-  /* ================= DASHBOARD DATA ================= */
-
   const fetchDashboardData = async () => {
     try {
       const token =
@@ -43,8 +41,6 @@ function Dashboard() {
           Authorization: `Bearer ${token}`,
         },
       };
-
-      /* PROFILE */
 
       const profileRes = await API.get(
         "/auth/profile",
@@ -71,23 +67,51 @@ function Dashboard() {
         currentUser.email
       );
 
-      /* ENROLLMENTS */
+      /* Update remembered account token */
 
-      const enrollmentRes = await API.get(
-        "/enrollments/my",
-        config
+      const savedAccounts = JSON.parse(
+        localStorage.getItem(
+          "eduBridgeAccounts"
+        ) || "[]"
       );
+
+      const updatedAccounts =
+        savedAccounts.map(
+          (account) =>
+            account.id ===
+            currentUser._id
+              ? {
+                  ...account,
+                  name: currentUser.name,
+                  email: currentUser.email,
+                  token,
+                }
+              : account
+        );
+
+      localStorage.setItem(
+        "eduBridgeAccounts",
+        JSON.stringify(
+          updatedAccounts
+        )
+      );
+
+      const enrollmentRes =
+        await API.get(
+          "/enrollments/my",
+          config
+        );
 
       setEnrollments(
-        enrollmentRes.data.enrollments || []
+        enrollmentRes.data
+          .enrollments || []
       );
 
-      /* PROGRESS */
-
-      const progressRes = await API.get(
-        "/progress/my",
-        config
-      );
+      const progressRes =
+        await API.get(
+          "/progress/my",
+          config
+        );
 
       const data =
         progressRes.data.progress || [];
@@ -101,7 +125,9 @@ function Dashboard() {
         if (!lessonId) return;
 
         if (
-          !latestProgress[lessonId] ||
+          !latestProgress[
+            lessonId
+          ] ||
           new Date(
             item.updatedAt ||
               item.createdAt
@@ -115,17 +141,18 @@ function Dashboard() {
                 ].createdAt
             )
         ) {
-          latestProgress[lessonId] =
-            item;
+          latestProgress[
+            lessonId
+          ] = item;
         }
       });
 
       const finalProgress =
-        Object.values(latestProgress);
+        Object.values(
+          latestProgress
+        );
 
       setProgress(finalProgress);
-
-      /* USER-SPECIFIC LOCAL PROGRESS */
 
       saveLocalProgress(
         finalProgress
@@ -210,8 +237,6 @@ function Dashboard() {
     }
   };
 
-  /* ================= LOCAL PROGRESS ================= */
-
   const saveLocalProgress = (
     progressData
   ) => {
@@ -236,8 +261,6 @@ function Dashboard() {
       );
     }
   };
-
-  /* ================= AI RECOMMENDATIONS ================= */
 
   const loadRecommendations =
     async () => {
@@ -267,8 +290,6 @@ function Dashboard() {
       }
     };
 
-  /* ================= LOGOUT ================= */
-
   const handleLogout = () => {
     const confirmLogout =
       window.confirm(
@@ -285,8 +306,9 @@ function Dashboard() {
     localStorage.removeItem("offlineEmail");
 
     /*
-      IMPORTANT:
-      Offline lessons, quizzes and progress
+      Remembered accounts,
+      offline lessons,
+      quizzes and progress
       are NOT deleted.
     */
 
@@ -295,15 +317,12 @@ function Dashboard() {
     });
   };
 
-  /* ================= STATS ================= */
-
   const coursesEnrolled =
     enrollments.length;
 
   const lessonsCompleted =
     progress.filter(
-      (item) =>
-        item.completed
+      (item) => item.completed
     ).length;
 
   const averageScore =
@@ -325,11 +344,12 @@ function Dashboard() {
 
       <div className="max-w-6xl mx-auto">
 
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
           <div>
+
             <h1 className="text-4xl font-bold text-green-700">
               Welcome,{" "}
               {user
@@ -343,6 +363,7 @@ function Dashboard() {
                 ? user.email
                 : ""}
             </p>
+
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -371,7 +392,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ================= OFFLINE ================= */}
+        {/* OFFLINE STATUS */}
 
         {offlineMode && (
           <div className="mb-6 bg-orange-100 border border-orange-300 rounded-xl p-4">
@@ -388,12 +409,11 @@ function Dashboard() {
           </div>
         )}
 
-        {/* ================= STATISTICS ================= */}
+        {/* STATISTICS */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
 
           <div className="bg-white rounded-2xl shadow-md p-6">
-
             <h2 className="text-gray-500">
               Courses Enrolled
             </h2>
@@ -403,11 +423,9 @@ function Dashboard() {
                 ? "..."
                 : coursesEnrolled}
             </p>
-
           </div>
 
           <div className="bg-white rounded-2xl shadow-md p-6">
-
             <h2 className="text-gray-500">
               Lessons Completed
             </h2>
@@ -417,11 +435,9 @@ function Dashboard() {
                 ? "..."
                 : lessonsCompleted}
             </p>
-
           </div>
 
           <div className="bg-white rounded-2xl shadow-md p-6">
-
             <h2 className="text-gray-500">
               Average Quiz Score
             </h2>
@@ -431,12 +447,11 @@ function Dashboard() {
                 ? "..."
                 : `${averageScore}%`}
             </p>
-
           </div>
 
         </div>
 
-        {/* ================= AI ASSISTANT ================= */}
+        {/* AI ASSISTANT */}
 
         <div className="mt-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-7 text-white">
 
@@ -473,7 +488,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ================= NAVIGATION ================= */}
+        {/* NAVIGATION */}
 
         <div className="flex flex-wrap justify-center gap-4 mt-10">
 
@@ -521,7 +536,7 @@ function Dashboard() {
 
         </div>
 
-        {/* ================= RECOMMENDATIONS ================= */}
+        {/* RECOMMENDATIONS */}
 
         <div className="mt-10 bg-white rounded-2xl shadow-md p-6">
 
@@ -643,7 +658,6 @@ function Dashboard() {
         </div>
 
       </div>
-
     </div>
   );
 }

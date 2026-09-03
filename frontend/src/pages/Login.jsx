@@ -34,20 +34,17 @@ function Login() {
       const user = res.data.user;
       const token = res.data.token;
 
-      /* ================= CURRENT SESSION ================= */
-
+      /* Current session */
       localStorage.setItem("token", token);
       localStorage.setItem("userId", user._id);
       localStorage.setItem("userName", user.name);
       localStorage.setItem("userEmail", user.email);
 
-      /* ================= OFFLINE SESSION ================= */
-
+      /* Offline session */
       localStorage.setItem("offlineUser", "true");
       localStorage.setItem("offlineEmail", user.email);
 
-      /* ================= REMEMBER ACCOUNT ================= */
-
+      /* Remember account */
       const savedAccounts = JSON.parse(
         localStorage.getItem("eduBridgeAccounts") || "[]"
       );
@@ -56,6 +53,7 @@ function Login() {
         id: user._id,
         name: user.name,
         email: user.email,
+        token: token,
       };
 
       const updatedAccounts = [
@@ -70,21 +68,7 @@ function Login() {
         JSON.stringify(updatedAccounts)
       );
 
-      /* ================= ACCOUNT-SPECIFIC PROGRESS ================= */
-
-      const oldProgress =
-        localStorage.getItem("dashboardProgress");
-
-      if (oldProgress) {
-        localStorage.setItem(
-          `dashboardProgress_${user._id}`,
-          oldProgress
-        );
-
-        localStorage.removeItem(
-          "dashboardProgress"
-        );
-      }
+      localStorage.removeItem("selectedAccountId");
 
       alert("Login Successful!");
 
