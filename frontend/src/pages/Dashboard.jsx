@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import { useNavigate } from "react-router-dom";
+import { getRecommendations } from "../services/recommendationService";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
@@ -8,10 +9,14 @@ function Dashboard() {
   const [progress, setProgress] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [recommendations, setRecommendations] = useState(null);
+  const [recommendationLoading, setRecommendationLoading] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
+    loadRecommendations();
   }, []);
 
   const fetchDashboardData = async () => {
@@ -29,11 +34,7 @@ function Dashboard() {
         },
       };
 
-      const profileRes = await API.get(
-        "/auth/profile",
-        config
-      );
-
+      const profileRes = await API.get("/auth/profile", config);
       setUser(profileRes.data.user);
 
       const enrollmentRes = await API.get(
@@ -51,7 +52,6 @@ function Dashboard() {
       );
 
       const data = progressRes.data.progress || [];
-
       const latestProgress = {};
 
       data.forEach((item) => {
@@ -62,18 +62,13 @@ function Dashboard() {
         if (
           !latestProgress[lessonId] ||
           new Date(item.createdAt) >
-            new Date(
-              latestProgress[lessonId].createdAt
-            )
+            new Date(latestProgress[lessonId].createdAt)
         ) {
           latestProgress[lessonId] = item;
         }
       });
 
-      setProgress(
-        Object.values(latestProgress)
-      );
-
+      setProgress(Object.values(latestProgress));
     } catch (error) {
       console.log("Dashboard Error:", error);
 
@@ -83,6 +78,17 @@ function Dashboard() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecommendations = async () => {
+    try {
+      const data = await getRecommendations();
+      setRecommendations(data.recommendations);
+    } catch (error) {
+      console.error("Recommendation Error:", error);
+    } finally {
+      setRecommendationLoading(false);
     }
   };
 
@@ -105,13 +111,11 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
-
       <div className="max-w-6xl mx-auto">
 
         {/* Welcome Section */}
         <h1 className="text-4xl font-bold text-green-700">
-          Welcome,{" "}
-          {user ? user.name : "Loading..."} 👋
+          Welcome, {user ? user.name : "Loading..."} 👋
         </h1>
 
         <p className="text-gray-600 mt-2">
@@ -121,7 +125,6 @@ function Dashboard() {
         {/* Dashboard Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
 
-          {/* Courses */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-gray-500">
               Courses Enrolled
@@ -132,7 +135,6 @@ function Dashboard() {
             </p>
           </div>
 
-          {/* Lessons */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-gray-500">
               Lessons Completed
@@ -143,16 +145,13 @@ function Dashboard() {
             </p>
           </div>
 
-          {/* Quiz */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h2 className="text-gray-500">
               Average Quiz Score
             </h2>
 
             <p className="text-4xl font-bold text-purple-600 mt-3">
-              {loading
-                ? "..."
-                : `${averageScore}%`}
+              {loading ? "..." : `${averageScore}%`}
             </p>
           </div>
 
@@ -175,9 +174,7 @@ function Dashboard() {
             </div>
 
             <button
-              onClick={() =>
-                navigate("/ai-assistant")
-              }
+              onClick={() => navigate("/ai-assistant")}
               className="bg-white text-blue-700 px-7 py-3 rounded-xl font-bold shadow-md hover:bg-blue-50 transition"
             >
               Ask AI →
@@ -191,36 +188,28 @@ function Dashboard() {
         <div className="flex flex-wrap justify-center gap-4 mt-10">
 
           <button
-            onClick={() =>
-              navigate("/offline-lessons")
-            }
+            onClick={() => navigate("/offline-lessons")}
             className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
           >
             📥 Offline Lessons
           </button>
 
           <button
-            onClick={() =>
-              navigate("/courses")
-            }
+            onClick={() => navigate("/courses")}
             className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
           >
             📚 Browse Courses
           </button>
 
           <button
-            onClick={() =>
-              navigate("/progress")
-            }
+            onClick={() => navigate("/progress")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
           >
             📊 My Progress
           </button>
 
           <button
-            onClick={() =>
-              navigate("/my-courses")
-            }
+            onClick={() => navigate("/my-courses")}
             className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-md"
           >
             🎓 My Courses
@@ -228,8 +217,105 @@ function Dashboard() {
 
         </div>
 
-      </div>
+        {/* AI Personalized Recommendations */}
+        <div className="mt-10 bg-white rounded-2xl shadow-md p-6">
 
+          <h2 className="text-2xl font-bold text-gray-800">
+            🎯 Recommended For You
+          </h2>
+
+          {recommendationLoading ? (
+            <p className="text-gray-500 mt-4">
+              🤖 Analyzing your learning progress...
+            </p>
+          ) : !recommendations ? (
+            <p className="text-gray-500 mt-4">
+              Complete some quizzes to get personalized
+              recommendations.
+            </p>
+          ) : (
+            <>
+              <p className="text-gray-600 mt-3">
+                {recommendations.summary}
+              </p>
+
+              {/* Weak Areas */}
+              {recommendations.weakAreas?.length > 0 && (
+                <div className="mt-5">
+                  <h3 className="font-semibold text-red-600">
+                    📌 Areas to Improve
+                  </h3>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {recommendations.weakAreas.map(
+                      (area, index) => (
+                        <span
+                          key={index}
+                          className="bg-red-100 text-red-700 px-3 py-1 rounded-full"
+                        >
+                          {area}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Strong Areas */}
+              {recommendations.strongAreas?.length > 0 && (
+                <div className="mt-5">
+                  <h3 className="font-semibold text-green-600">
+                    ⭐ Your Strong Areas
+                  </h3>
+
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {recommendations.strongAreas.map(
+                      (area, index) => (
+                        <span
+                          key={index}
+                          className="bg-green-100 text-green-700 px-3 py-1 rounded-full"
+                        >
+                          {area}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              <div className="mt-6 space-y-4">
+
+                {recommendations.recommendations?.map(
+                  (item, index) => (
+                    <div
+                      key={index}
+                      className="border border-blue-100 bg-blue-50 rounded-xl p-4"
+                    >
+                      <h3 className="font-bold text-blue-700">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-gray-700 mt-2">
+                        <strong>Why:</strong>{" "}
+                        {item.reason}
+                      </p>
+
+                      <p className="text-gray-700 mt-1">
+                        <strong>Next step:</strong>{" "}
+                        {item.action}
+                      </p>
+                    </div>
+                  )
+                )}
+
+              </div>
+            </>
+          )}
+
+        </div>
+
+      </div>
     </div>
   );
 }
