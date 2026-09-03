@@ -90,15 +90,6 @@ function Progress() {
     }
   };
 
-  const totalLessons =
-    progress.length + offlineProgress.length;
-
-  const completedLessons =
-    progress.filter((item) => item.completed).length +
-    offlineProgress.filter(
-      (item) => Number(item.percentage || 0) >= 60
-    ).length;
-
   const allProgress = [
     ...progress,
     ...offlineProgress.map((item) => ({
@@ -107,16 +98,41 @@ function Progress() {
     })),
   ];
 
+  const totalLessons = allProgress.length;
+
+  const completedLessons = allProgress.filter((item) => {
+    const percentage = Number(item.percentage || 0);
+
+    return item.offline
+      ? percentage >= 60
+      : item.completed;
+  }).length;
+
   const averageScore =
-    allProgress.length > 0
+    totalLessons > 0
       ? Math.round(
           allProgress.reduce(
             (sum, item) =>
               sum + Number(item.percentage || 0),
             0
-          ) / allProgress.length
+          ) / totalLessons
         )
       : 0;
+
+  const completionPercentage =
+    totalLessons > 0
+      ? Math.round(
+          (completedLessons / totalLessons) * 100
+        )
+      : 0;
+
+  const strongLessons = allProgress.filter(
+    (item) => Number(item.percentage || 0) >= 80
+  );
+
+  const weakLessons = allProgress.filter(
+    (item) => Number(item.percentage || 0) < 60
+  );
 
   if (loading) {
     return (
@@ -128,7 +144,11 @@ function Progress() {
     );
   }
 
-  if (error && progress.length === 0 && offlineProgress.length === 0) {
+  if (
+    error &&
+    progress.length === 0 &&
+    offlineProgress.length === 0
+  ) {
     return (
       <div className="min-h-screen bg-green-50 flex items-center justify-center">
         <h1 className="text-2xl font-semibold text-red-500">
@@ -142,6 +162,7 @@ function Progress() {
     <div className="min-h-screen bg-green-50 p-8">
       <div className="max-w-6xl mx-auto">
 
+        {/* Header */}
         <h1 className="text-4xl font-bold text-green-700">
           📊 My Progress
         </h1>
@@ -150,6 +171,7 @@ function Progress() {
           Track your latest learning progress and quiz performance.
         </p>
 
+        {/* Offline Warning */}
         {offlineProgress.length > 0 && (
           <div className="mt-6 bg-orange-100 border border-orange-300 rounded-xl p-4">
             <p className="text-orange-700 font-semibold">
@@ -164,7 +186,7 @@ function Progress() {
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
 
           <div className="bg-white rounded-2xl shadow-md p-6">
             <p className="text-gray-500">
@@ -196,9 +218,122 @@ function Progress() {
             </h2>
           </div>
 
+          <div className="bg-white rounded-2xl shadow-md p-6">
+            <p className="text-gray-500">
+              Completion
+            </p>
+
+            <h2 className="text-4xl font-bold text-orange-500 mt-3">
+              {completionPercentage}%
+            </h2>
+          </div>
+
         </div>
 
-        {/* Progress List */}
+        {/* Performance Overview */}
+        {allProgress.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-md mt-10 p-6">
+
+            <h2 className="text-2xl font-bold text-gray-800">
+              📈 Performance Overview
+            </h2>
+
+            <div className="mt-6">
+
+              <div className="flex justify-between mb-2">
+                <span className="text-gray-600">
+                  Overall Completion
+                </span>
+
+                <span className="font-bold text-green-600">
+                  {completionPercentage}%
+                </span>
+              </div>
+
+              <div className="w-full bg-gray-200 rounded-full h-4">
+                <div
+                  className="bg-green-500 h-4 rounded-full transition-all"
+                  style={{
+                    width: `${completionPercentage}%`,
+                  }}
+                />
+              </div>
+
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+
+              {/* Strong Areas */}
+              <div className="border border-green-200 bg-green-50 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-green-700">
+                  🟢 Strong Areas
+                </h3>
+
+                {strongLessons.length === 0 ? (
+                  <p className="text-gray-500 mt-3">
+                    Keep practicing to build strong areas.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {strongLessons.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between bg-white rounded-lg p-3"
+                      >
+                        <span>
+                          {item.offline
+                            ? "Offline Lesson"
+                            : item.lesson?.lessonName?.english ||
+                              "Lesson"}
+                        </span>
+
+                        <span className="font-bold text-green-600">
+                          {Number(item.percentage || 0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Weak Areas */}
+              <div className="border border-red-200 bg-red-50 rounded-xl p-5">
+                <h3 className="text-lg font-bold text-red-700">
+                  🔴 Areas to Improve
+                </h3>
+
+                {weakLessons.length === 0 ? (
+                  <p className="text-gray-500 mt-3">
+                    Great job! No weak areas right now.
+                  </p>
+                ) : (
+                  <div className="mt-3 space-y-2">
+                    {weakLessons.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between bg-white rounded-lg p-3"
+                      >
+                        <span>
+                          {item.offline
+                            ? "Offline Lesson"
+                            : item.lesson?.lessonName?.english ||
+                              "Lesson"}
+                        </span>
+
+                        <span className="font-bold text-red-600">
+                          {Number(item.percentage || 0)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Lesson Progress */}
         <div className="bg-white rounded-2xl shadow-md mt-10 p-6">
 
           <h2 className="text-2xl font-bold text-gray-800 mb-6">
@@ -230,7 +365,10 @@ function Progress() {
                       "Lesson";
 
                 const percentage = Math.min(
-                  Math.max(Number(item.percentage || 0), 0),
+                  Math.max(
+                    Number(item.percentage || 0),
+                    0
+                  ),
                   100
                 );
 
@@ -244,7 +382,9 @@ function Progress() {
                     key={
                       item.offline
                         ? item.id
-                        : item.lesson?._id || item._id || index
+                        : item.lesson?._id ||
+                          item._id ||
+                          index
                     }
                     className="border rounded-xl p-5 hover:shadow-md transition"
                   >
@@ -299,7 +439,7 @@ function Progress() {
                       <div className="w-full bg-gray-200 rounded-full h-3">
 
                         <div
-                          className="bg-green-500 h-3 rounded-full"
+                          className="bg-green-500 h-3 rounded-full transition-all"
                           style={{
                             width: `${percentage}%`,
                           }}
