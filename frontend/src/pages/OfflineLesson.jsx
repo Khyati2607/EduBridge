@@ -10,7 +10,7 @@ function OfflineLesson() {
   const navigate = useNavigate();
 
   const [lesson, setLesson] = useState(null);
-  const [quiz, setQuiz] = useState(null);
+  const [quiz, setQuiz] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,13 +19,24 @@ function OfflineLesson() {
 
   const loadLesson = async () => {
     try {
+      if (!lessonId) {
+        setLoading(false);
+        return;
+      }
+
       const lessonData = await getOfflineLesson(lessonId);
       const quizData = await getOfflineQuiz(lessonId);
 
+      console.log("Offline lesson ID:", lessonId);
+      console.log("Offline lesson:", lessonData);
+      console.log("Offline quiz:", quizData);
+
       setLesson(lessonData);
-      setQuiz(quizData);
+      setQuiz(quizData || []);
     } catch (error) {
-      console.log("Offline Lesson Error:", error);
+      console.error("Offline Lesson Error:", error);
+      setLesson(null);
+      setQuiz([]);
     } finally {
       setLoading(false);
     }
@@ -34,7 +45,7 @@ function OfflineLesson() {
   if (loading) {
     return (
       <div className="min-h-screen bg-green-50 flex items-center justify-center">
-        <h1 className="text-2xl text-green-700">
+        <h1 className="text-2xl font-semibold text-green-700">
           Loading Offline Lesson...
         </h1>
       </div>
@@ -64,24 +75,22 @@ function OfflineLesson() {
 
   return (
     <div className="min-h-screen bg-green-50 p-8">
-
       <div className="max-w-4xl mx-auto">
 
-        {/* Offline indicator */}
+        {/* Offline Banner */}
         <div className="bg-orange-100 border border-orange-300 rounded-xl p-4 mb-6">
           <p className="text-orange-700 font-semibold">
             📥 Offline Mode
           </p>
 
           <p className="text-orange-600 text-sm mt-1">
-            You are viewing a saved lesson. Internet connection is not required.
+            This lesson is stored on your device.
           </p>
         </div>
 
-        {/* Lesson Card */}
+        {/* Lesson */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
 
-          {/* Lesson title */}
           <p className="text-sm font-semibold text-green-600">
             Saved Lesson
           </p>
@@ -97,8 +106,7 @@ function OfflineLesson() {
             </h2>
 
             <p className="mt-4 text-gray-700 leading-relaxed whitespace-pre-line">
-              {lesson.notes?.english ||
-                "No English notes available."}
+              {lesson.notes?.english || "No English notes available."}
             </p>
           </div>
 
@@ -115,27 +123,26 @@ function OfflineLesson() {
             </div>
           )}
 
-          {/* Video information */}
+          {/* Video */}
           <div className="mt-8 bg-gray-50 rounded-xl p-5">
             <p className="text-gray-600 font-semibold">
               🎥 Video
             </p>
 
             <p className="text-gray-500 text-sm mt-2">
-              Videos require an internet connection unless
-              they have been separately downloaded to the device.
+              Videos require internet unless downloaded separately.
             </p>
           </div>
 
-          {/* Offline Quiz */}
-          {quiz && quiz.length > 0 && (
+          {/* Quiz */}
+          {quiz.length > 0 ? (
             <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
               <h2 className="text-xl font-semibold text-blue-700">
                 📝 Offline Quiz
               </h2>
 
               <p className="text-gray-600 mt-2">
-                This quiz is available without an internet connection.
+                This quiz is available without internet.
               </p>
 
               <button
@@ -145,18 +152,15 @@ function OfflineLesson() {
                 📝 Take Quiz
               </button>
             </div>
-          )}
-
-          {/* No quiz available */}
-          {(!quiz || quiz.length === 0) && (
+          ) : (
             <div className="mt-8 bg-gray-50 rounded-xl p-5">
               <p className="text-gray-500">
-                📝 Quiz has not been downloaded for this lesson.
+                📝 No offline quiz saved for this lesson.
               </p>
             </div>
           )}
 
-          {/* Back button */}
+          {/* Back */}
           <button
             onClick={() => navigate("/offline-lessons")}
             className="mt-10 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-xl"
@@ -165,9 +169,7 @@ function OfflineLesson() {
           </button>
 
         </div>
-
       </div>
-
     </div>
   );
 }
